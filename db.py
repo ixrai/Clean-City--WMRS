@@ -3,6 +3,7 @@ import os
 import re
 import sqlite3
 from datetime import datetime
+
 from werkzeug.security import generate_password_hash
 from config import DB_CONFIG, SQLITE_DB_PATH, DB_TYPE, BASE_DIR
 
@@ -31,7 +32,7 @@ def _get_staff_password():
 
 
 class RowDict(dict):
-    """Dictionary supporting both named and integer indexing."""
+    """Dictionary that also supports integer indexing like a tuple."""
 
     def __init__(self, fields, values):
         super().__init__(zip(fields, values))
@@ -44,40 +45,61 @@ class RowDict(dict):
 
 
 def _parse_val(field_name, val):
-    if val and (field_name.endswith('_at') or field_name == 'date') and isinstance(val, str):
+    """Parse date/timestamp strings from SQLite."""
+
+    if val and (
+        field_name.endswith('_at') or field_name == 'date'
+    ) and isinstance(val, str):
+
         try:
-            return datetime.strptime(val[:19], '%Y-%m-%d %H:%M:%S')
+            return datetime.strptime(
+                val[:19], '%Y-%m-%d %H:%M:%S'
+            )
         except Exception:
             try:
                 return datetime.fromisoformat(val)
             except Exception:
                 return val
+
     return val
 
 
 def dict_factory(cursor, row):
+    """Convert SQLite rows into RowDict objects."""
+
     fields = [column[0] for column in cursor.description]
+
     parsed_values = [
         _parse_val(field, value)
         for field, value in zip(fields, row)
     ]
+
     return RowDict(fields, parsed_values)
 
 
 def _translate_field_func(match):
-    args = [a.strip() for a in match.group(1).split(',')]
+    """Translate MySQL FIELD() into SQLite CASE."""
+
+    args = [
+        argument.strip()
+        for argument in match.group(1).split(',')
+    ]
+
     if len(args) < 2:
         return match.group(0)
 
-    col = args[0]
+    column = args[0]
+
     cases = ' '.join(
-        f"WHEN {val} THEN {i + 1}"
-        for i, val in enumerate(args[1:])
+        f"WHEN {value} THEN {index + 1}"
+        for index, value in enumerate(args[1:])
     )
-    return f"CASE {col} {cases} ELSE 999 END"
+
+    return f"CASE {column} {cases} ELSE 999 END"
 
 
 class SQLiteCursorWrapper:
+    """SQLite cursor with MySQL-compatible SQL handling."""
 
     def __init__(self, raw_cursor, as_dict=True):
         self._cursor = raw_cursor
@@ -85,9 +107,11 @@ class SQLiteCursorWrapper:
 
     def execute(self, sql, params=None):
 
+        # Translate SELECT DATABASE()
         if "SELECT DATABASE()" in sql.upper():
             sql = "SELECT 'waste_management' AS `DATABASE()`"
 
+        # Translate MySQL FIELD()
         if "FIELD(" in sql.upper():
             sql = re.sub(
                 r'FIELD\s*\((.*?)\)',
@@ -96,14 +120,18 @@ class SQLiteCursorWrapper:
                 flags=re.IGNORECASE
             )
 
+        # Translate ON DUPLICATE KEY UPDATE.
         if "ON DUPLICATE KEY UPDATE" in sql.upper():
             sql = re.sub(
                 r"ON DUPLICATE KEY UPDATE\s+rating\s*=\s*VALUES\s*\(\s*rating\s*\)\s*,\s*comments\s*=\s*VALUES\s*\(\s*comments\s*\)",
-                "ON CONFLICT(complaint_id) DO UPDATE SET rating = excluded.rating, comments = excluded.comments",
+                "ON CONFLICT(complaint_id) DO UPDATE SET "
+                "rating = excluded.rating, "
+                "comments = excluded.comments",
                 sql,
                 flags=re.IGNORECASE
             )
 
+        # Translate NOW()
         if "NOW()" in sql.upper():
             sql = re.sub(
                 r'NOW\s*\(\s*\)',
@@ -112,14 +140,15 @@ class SQLiteCursorWrapper:
                 flags=re.IGNORECASE
             )
 
+        # Translate MySQL placeholders.
         if params is not None:
-            sql = re.sub(r'(?<!%)%s', '?', sql)
-            sql = sql.replace('%%', '%')
+            converted_sql = re.sub(r'(?<!%)%s', '?', sql)
+            converted_sql = converted_sql.replace('%%', '%')
 
             if isinstance(params, list):
                 params = tuple(params)
 
-            return self._cursor.execute(sql, params)
+            return self._cursor.execute(converted_sql, params)
 
         return self._cursor.execute(sql)
 
@@ -139,7 +168,9 @@ class SQLiteCursorWrapper:
 
         if not self._as_dict:
             return [
-                tuple(row._values) if isinstance(row, RowDict) else row
+                tuple(row._values)
+                if isinstance(row, RowDict)
+                else row
                 for row in rows
             ]
 
@@ -165,6 +196,7 @@ class SQLiteCursorWrapper:
 
 
 class SQLiteConnectionWrapper:
+    """SQLite connection compatible with mysql.connector usage."""
 
     def __init__(self, raw_conn):
         self._conn = raw_conn
@@ -172,7 +204,11 @@ class SQLiteConnectionWrapper:
 
     def cursor(self, dictionary=True):
         raw_cursor = self._conn.cursor()
-        return SQLiteCursorWrapper(raw_cursor, as_dict=dictionary)
+
+        return SQLiteCursorWrapper(
+            raw_cursor,
+            as_dict=dictionary
+        )
 
     def commit(self):
         self._conn.commit()
@@ -185,6 +221,7 @@ class SQLiteConnectionWrapper:
 
     def close(self):
         self._is_closed = True
+
         try:
             self._conn.close()
         except Exception:
@@ -192,45 +229,60 @@ class SQLiteConnectionWrapper:
 
 
 def _find_account(cur, new_email, old_email):
-    """Find the new account first, otherwise find the old username."""
+    """Find new account first, otherwise find the old email."""
 
     cur.execute(
-        "SELECT user_id FROM users WHERE email = %s",
+        "SELECT user_id FROM users WHERE email = ?",
         (new_email,)
     )
+
     account = cur.fetchone()
 
     if account:
         return account[0]
 
     cur.execute(
-        "SELECT user_id FROM users WHERE email = %s",
+        "SELECT user_id FROM users WHERE email = ?",
         (old_email,)
     )
+
     account = cur.fetchone()
 
     return account[0] if account else None
 
 
 def _seed_sqlite_accounts(cur):
-    """Create or update default admin and staff accounts."""
+    """Create or update the default admin and staff accounts."""
+
+    # ---------------- ADMIN ----------------
 
     admin_id = _find_account(
-        cur, ADMIN_EMAIL, ADMIN_OLD_EMAIL
+        cur,
+        ADMIN_EMAIL,
+        ADMIN_OLD_EMAIL
     )
 
-    admin_hash = generate_password_hash(_get_admin_password())
+    admin_hash = generate_password_hash(
+        _get_admin_password()
+    )
 
     if admin_id:
+
         cur.execute(
             """
             UPDATE users
             SET email = ?, password_hash = ?
             WHERE user_id = ?
             """,
-            (ADMIN_EMAIL, admin_hash, admin_id)
+            (
+                ADMIN_EMAIL,
+                admin_hash,
+                admin_id
+            )
         )
+
     else:
+
         cur.execute(
             """
             INSERT INTO users
@@ -246,13 +298,20 @@ def _seed_sqlite_accounts(cur):
             )
         )
 
+    # ---------------- STAFF ----------------
+
     staff_id = _find_account(
-        cur, STAFF_EMAIL, STAFF_OLD_EMAIL
+        cur,
+        STAFF_EMAIL,
+        STAFF_OLD_EMAIL
     )
 
-    staff_hash = generate_password_hash(_get_staff_password())
+    staff_hash = generate_password_hash(
+        _get_staff_password()
+    )
 
     if staff_id:
+
         cur.execute(
             """
             UPDATE users
@@ -266,7 +325,9 @@ def _seed_sqlite_accounts(cur):
                 staff_id
             )
         )
+
     else:
+
         cur.execute(
             """
             INSERT INTO users
@@ -281,45 +342,76 @@ def _seed_sqlite_accounts(cur):
                 "staff"
             )
         )
+
         staff_id = cur.lastrowid
 
+    # Ensure staff profile exists.
     cur.execute(
-        """
-        INSERT OR IGNORE INTO staff
-        (user_id, department_id, employee_code, designation,
-         assigned_zone, status)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (
-            staff_id,
-            1,
-            "EMP-SWM-101",
-            "Field Supervisor",
-            "Central Ward",
-            "available"
-        )
+        "SELECT user_id FROM staff WHERE user_id = ?",
+        (staff_id,)
     )
+
+    if not cur.fetchone():
+
+        cur.execute(
+            """
+            INSERT INTO staff
+            (
+                user_id,
+                department_id,
+                employee_code,
+                designation,
+                assigned_zone,
+                status
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                staff_id,
+                1,
+                "EMP-SWM-101",
+                "Field Supervisor",
+                "Central Ward",
+                "available"
+            )
+        )
 
 
 def init_sqlite_database():
-    """Initialize SQLite schema and seed/update default accounts."""
+    """Initialize SQLite schema and synchronize default accounts."""
 
     global _SQLITE_INITIALIZED
 
-    os.makedirs(os.path.dirname(SQLITE_DB_PATH), exist_ok=True)
+    os.makedirs(
+        os.path.dirname(SQLITE_DB_PATH),
+        exist_ok=True
+    )
 
-    conn = sqlite3.connect(SQLITE_DB_PATH)
+    conn = sqlite3.connect(
+        SQLITE_DB_PATH,
+        timeout=20.0
+    )
+
     cur = conn.cursor()
 
     try:
+
+        # Check whether users table exists.
         cur.execute(
-            "SELECT name FROM sqlite_master "
-            "WHERE type='table' AND name='users'"
+            """
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'table'
+            AND name = 'users'
+            """
         )
 
         if not cur.fetchone():
+
             schema_file = os.path.join(
-                BASE_DIR, 'database', 'schema_sqlite.sql'
+                BASE_DIR,
+                'database',
+                'schema_sqlite.sql'
             )
 
             if not os.path.exists(schema_file):
@@ -327,14 +419,24 @@ def init_sqlite_database():
                     f"SQLite schema not found: {schema_file}"
                 )
 
-            with open(schema_file, 'r', encoding='utf-8') as file:
+            with open(
+                schema_file,
+                'r',
+                encoding='utf-8'
+            ) as file:
                 conn.executescript(file.read())
 
-        # Always synchronize default account credentials on initialization.
+        # Synchronize credentials on every initialization.
         _seed_sqlite_accounts(cur)
 
         conn.commit()
+
         _SQLITE_INITIALIZED = True
+
+        print("SQLite database initialized.")
+        print(f"Admin account: {ADMIN_EMAIL}")
+        print(f"Staff account: {STAFF_EMAIL}")
+        print("Staff name: Yogesh Kirar")
 
     except Exception:
         conn.rollback()
@@ -346,9 +448,14 @@ def init_sqlite_database():
 
 
 def get_sqlite_connection():
+    """Return a wrapped SQLite connection."""
+
     global _SQLITE_INITIALIZED
 
-    if not _SQLITE_INITIALIZED or not os.path.exists(SQLITE_DB_PATH):
+    if (
+        not _SQLITE_INITIALIZED
+        or not os.path.exists(SQLITE_DB_PATH)
+    ):
         init_sqlite_database()
 
     raw_conn = sqlite3.connect(
@@ -364,26 +471,33 @@ def get_sqlite_connection():
 
 def get_connection():
     """
-    Returns a connection according to DB_TYPE:
-    sqlite, mysql, or auto.
+    Return a connection according to DB_TYPE.
+
+    sqlite: SQLite database.
+    mysql: MySQL database only.
+    auto: Try MySQL, then fall back to SQLite.
     """
 
     if DB_TYPE == "sqlite":
         return get_sqlite_connection()
 
     if mysql is None:
+
         if DB_TYPE == "mysql":
             raise RuntimeError(
                 "DB_TYPE=mysql but mysql-connector-python "
-                "is not installed. Run: pip install mysql-connector-python"
+                "is not installed. Install it using "
+                "pip install mysql-connector-python"
             )
 
         return get_sqlite_connection()
 
     try:
+
         return mysql.connector.connect(**DB_CONFIG)
 
     except Exception:
+
         if DB_TYPE == "mysql":
             raise
 
@@ -391,6 +505,12 @@ def get_connection():
 
 
 def get_db_cursor(dictionary=True):
+    """Return both database connection and cursor."""
+
     conn = get_connection()
-    cursor = conn.cursor(dictionary=dictionary)
+
+    cursor = conn.cursor(
+        dictionary=dictionary
+    )
+
     return conn, cursor
