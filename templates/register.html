@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Citizen Registration - CleanCity{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="bg-success text-white p-4 text-center">
+                    <div class="icon-box bg-white text-success rounded-circle shadow-sm mb-2 mx-auto">
+                        <i class="bi bi-person-plus fs-3"></i>
+                    </div>
+                    <span class="badge bg-white bg-opacity-25 text-white border border-light border-opacity-25 rounded-pill px-3 py-1 mb-2">
+                        <i class="bi bi-fire text-warning me-1"></i> Firebase Email/Password Auth
+                    </span>
+                    <h4 class="fw-bold mb-1">Create Citizen Account</h4>
+                    <p class="text-white-50 small mb-0">Join the civic mission to keep our city clean & green</p>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <!-- Dynamic Alert Box for Firebase responses -->
+                    <div id="registerAlert" class="alert d-none mb-3 py-2 small" role="alert"></div>
+
+                    <form id="registerForm" action="{{ url_for('register') }}" method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control" id="name" name="name" placeholder="e.g. Ramesh Sharma" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
+                                <input type="email" class="form-control" id="email" name="email" placeholder="name@domain.com" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Mobile Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-telephone"></i></span>
+                                <input type="tel" class="form-control" id="phone" name="phone" placeholder="10-digit mobile number" pattern="[0-9]{10}">
+                            </div>
+                            <div class="form-text small">Used for SMS / ticket updates.</div>
+                        </div>
+
+                        <div class="row g-2 mb-4">
+                            <div class="col-md-6">
+                                <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-key"></i></span>
+                                    <input type="password" class="form-control" id="password" name="password" placeholder="Min. 6 chars" minlength="6" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="confirm_password" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-shield-check"></i></span>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Re-type password" required>
+                                </div>
+                            </div>
+                            <div id="passwordError" class="text-danger small mt-1 d-none">
+                                Passwords do not match.
+                            </div>
+                        </div>
+
+                        <button type="submit" id="regSubmitBtn" class="btn btn-success w-100 py-2 fw-bold rounded-3 shadow-sm mb-3 d-flex align-items-center justify-content-center">
+                            <span id="regSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
+                            <span><i class="bi bi-person-check me-1"></i> Register as Citizen</span>
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-3 border-top pt-3">
+                        <p class="text-muted small mb-0">
+                            Already registered? 
+                            <a href="{{ url_for('login') }}" class="text-success fw-bold text-decoration-none">Sign in here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function validatePasswords() {
+    const p1 = document.getElementById('password').value;
+    const p2 = document.getElementById('confirm_password').value;
+    const err = document.getElementById('passwordError');
+    if (p1 !== p2) {
+        err.classList.remove('d-none');
+        return false;
+    }
+    err.classList.add('d-none');
+    return true;
+}
+
+document.getElementById('registerForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    if (!validatePasswords()) {
+        return;
+    }
+
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const password = document.getElementById('password').value;
+
+    const alertBox = document.getElementById('registerAlert');
+    const submitBtn = document.getElementById('regSubmitBtn');
+    const spinner = document.getElementById('regSpinner');
+
+    submitBtn.disabled = true;
+    spinner.classList.remove('d-none');
+    alertBox.className = 'alert alert-info py-2 small';
+    alertBox.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Registering account with Firebase Auth...';
+    alertBox.classList.remove('d-none');
+
+    try {
+        if (window.CleanCityAuth && typeof window.CleanCityAuth.register === 'function') {
+            const res = await window.CleanCityAuth.register({ name, email, phone, password });
+            if (res.success) {
+                alertBox.className = 'alert alert-success py-2 small';
+                alertBox.innerHTML = '<i class="bi bi-check-circle me-1"></i> Account created with Firebase! Redirecting to your dashboard...';
+                setTimeout(() => {
+                    window.location.href = res.redirect;
+                }, 400);
+                return;
+            } else {
+                alertBox.className = 'alert alert-danger py-2 small';
+                alertBox.textContent = res.error || 'Registration failed.';
+                submitBtn.disabled = false;
+                spinner.classList.add('d-none');
+            }
+        } else {
+            // Fallback direct submit
+            document.getElementById('registerForm').submit();
+        }
+    } catch (err) {
+        console.warn('[Registration Error]', err);
+        document.getElementById('registerForm').submit();
+    }
+});
+</script>
+{% endblock %}

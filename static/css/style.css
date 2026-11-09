@@ -1,0 +1,196 @@
+/* Custom CSS for Waste Management Reporting System */
+:root {
+    --brand-green: #198754;
+    --brand-dark-green: #146c43;
+    --brand-light-green: #e8f5e9;
+    --brand-accent-yellow: #ffc107;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #2b3035;
+    background-color: #f8fafc;
+}
+
+/* Navbar Enhancements */
+.navbar {
+    background: linear-gradient(135deg, #198754 0%, #0f5132 100%) !important;
+}
+
+.navbar-brand span {
+    letter-spacing: -0.5px;
+}
+
+.nav-link {
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.nav-link:hover {
+    color: #ffd700 !important;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, #0f5132 0%, #198754 50%, #20c997 100%);
+    color: white;
+    padding: 75px 0 65px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+/* Feature & Stat Cards */
+.card {
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08) !important;
+}
+
+.icon-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+}
+
+/* Leaflet Map Styling */
+.map-container {
+    height: 480px;
+    width: 100%;
+    border-radius: 12px;
+    z-index: 1;
+}
+
+.map-picker {
+    height: 320px;
+    width: 100%;
+    border-radius: 8px;
+    z-index: 1;
+}
+
+/* Status Badges */
+.badge-pending {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-assigned {
+    background-color: #fd7e14;
+    color: #fff;
+}
+
+.badge-in-progress {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+.badge-resolved {
+    background-color: #198754;
+    color: #fff;
+}
+
+.badge-rejected {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+/* Image Comparison Container */
+.photo-preview-box {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+/* Form Styles */
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.form-control, .form-select {
+    padding: 0.65rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    font-size: 0.95rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.2);
+}
+
+/* Utilities */
+.hover-white:hover {
+    color: #fff !important;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Responsive navigation for all user roles */
+.navbar .navbar-nav {
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+}
+
+.navbar .nav-link {
+    white-space: nowrap;
+    padding: 0.65rem 0.55rem !important;
+    font-size: 0.95rem;
+}
+
+.navbar .navbar-brand {
+    white-space: nowrap;
+    margin-right: 1.25rem;
+}
+
+/* Keep account controls aligned */
+.navbar .navbar-collapse {
+    align-items: center;
+}
+
+.navbar .navbar-collapse > .d-flex {
+    flex-shrink: 0;
+}
+
+/* Smaller screens */
+@media (max-width: 1199.98px) {
+    .navbar .navbar-nav {
+        align-items: stretch;
+        gap: 0;
+    }
+
+    .navbar .nav-link {
+        white-space: normal;
+        padding: 0.6rem 0.75rem !important;
+    }
+
+    .navbar .navbar-collapse > .d-flex {
+        margin-top: 10px;
+        align-items: flex-start !important;
+    }
+}

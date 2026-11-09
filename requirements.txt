@@ -1,0 +1,12 @@
+Flask>=3.0.0
+python-dotenv>=1.0.0
+Werkzeug>=3.0.0
+reportlab>=4.0.0
+
+# Optional: only needed if you run with DB_TYPE=mysql (or auto)
+# mysql-connector-python>=8.0.0
+
+# Optional: nicer labelled sample photos when seeding demo data
+# Pillow>=10.0.0
+
+gunicorn>=22.0.0

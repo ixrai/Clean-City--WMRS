@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Sanitation Staff Directory - Admin Portal{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-people-fill text-primary me-2"></i>Sanitation Staff Directory</h2>
+            <p class="text-muted mb-0">Manage municipal cleaning workforce, zone assignments, and duty availability.</p>
+        </div>
+        <div class="mt-3 mt-md-0">
+            <button class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#addStaffModal">
+                <i class="bi bi-person-plus-fill me-1"></i> Register New Staff Member
+            </button>
+        </div>
+    </div>
+
+    <!-- Staff Roster Table -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+        <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom">
+            <h5 class="fw-bold mb-0">Active Field Roster</h5>
+            <span class="badge bg-light text-dark border">{{ staff_members|length }} Staff Registered</span>
+        </div>
+
+        <div class="card-body p-0">
+            {% if staff_members %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4">Emp Code</th>
+                            <th>Staff Name</th>
+                            <th>Contact Info</th>
+                            <th>Department</th>
+                            <th>Assigned Zone</th>
+                            <th>Duty Status</th>
+                            <th>Active Tasks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in staff_members %}
+                        <tr>
+                            <td class="ps-4 font-monospace fw-bold text-primary">{{ s.employee_code }}</td>
+                            <td>
+                                <strong class="d-block">{{ s.name }}</strong>
+                                <small class="text-muted">{{ s.designation }}</small>
+                            </td>
+                            <td>
+                                <span class="d-block small"><i class="bi bi-envelope me-1"></i>{{ s.email }}</span>
+                                <span class="d-block small text-muted"><i class="bi bi-telephone me-1"></i>{{ s.phone or 'N/A' }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ s.department_name or 'General Sanitation' }}</span>
+                            </td>
+                            <td>
+                                <span class="small fw-semibold"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ s.assigned_zone }}</span>
+                            </td>
+                            <td>
+                                {% if s.status == 'available' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Available</span>
+                                {% elif s.status == 'busy' %}
+                                    <span class="badge bg-warning-subtle text-dark border border-warning-subtle">Busy on Field</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">On Leave</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-primary rounded-pill px-3">{{ s.active_task_count or 0 }} active</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <p class="text-muted mb-0">No staff members found.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add New Staff Member -->
+<div class="modal fade" id="addStaffModal" tabindex="-1" aria-labelledby="addStaffModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold" id="addStaffModalLabel"><i class="bi bi-person-plus-fill me-2"></i>Add Staff Member</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('admin_staff') }}" method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. Anil Verma" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Email Address <span class="text-danger">*</span></label>
+                        <input type="email" name="email" class="form-control" placeholder="anil.staff@wastemanage.gov" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" name="phone" class="form-control" placeholder="10-digit mobile number">
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Employee Code <span class="text-danger">*</span></label>
+                            <input type="text" name="employee_code" class="form-control" placeholder="EMP-SWM-102" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Assigned Ward / Zone</label>
+                            <input type="text" name="assigned_zone" class="form-control" placeholder="e.g. North Ward" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Department</label>
+                        <select name="department_id" class="form-select">
+                            {% for d in departments %}
+                            <option value="{{ d.department_id }}">{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Designation</label>
+                        <input type="text" name="designation" class="form-control" placeholder="Sanitation Supervisor / Officer" value="Field Sanitation Officer">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Initial Password <span class="text-danger">*</span></label>
+                        <input type="password" name="password" class="form-control" placeholder="Temporary password" minlength="8" required>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success fw-bold rounded-pill px-4">Register Staff</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

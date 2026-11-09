@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Geospatial Complaints & Hotspot Map - CleanCity{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3 px-md-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="fw-bold mb-1"><i class="bi bi-map-fill text-danger me-2"></i>Citywide Garbage Hotspot Map</h3>
+            <p class="text-muted small mb-0">Live geospatial visualization of waste accumulation and active sanitation tickets.</p>
+        </div>
+        <div class="d-flex gap-2 mt-2 mt-md-0">
+            <button class="btn btn-sm btn-outline-dark rounded-pill active" onclick="filterMap('all')">All Markers</button>
+            <button class="btn btn-sm btn-outline-warning rounded-pill" onclick="filterMap('Pending')">Pending Only</button>
+            <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="filterMap('In Progress')">In Progress</button>
+            <button class="btn btn-sm btn-outline-success rounded-pill" onclick="filterMap('Resolved')">Resolved</button>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-3">
+        <div class="card-body p-0">
+            <div id="adminMap" style="height: 600px; width: 100%;"></div>
+        </div>
+    </div>
+
+    <!-- Map Legend -->
+    <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 small">
+            <span class="fw-bold text-dark"><i class="bi bi-palette-fill me-1"></i>Map Legend:</span>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-circle-fill me-1"></i>Pending Review</span>
+                <span class="badge bg-info text-dark px-2 py-1"><i class="bi bi-circle-fill me-1"></i>Assigned</span>
+                <span class="badge bg-primary px-2 py-1"><i class="bi bi-circle-fill me-1"></i>In Progress</span>
+                <span class="badge bg-success px-2 py-1"><i class="bi bi-circle-fill me-1"></i>Resolved</span>
+            </div>
+            <div class="text-muted">
+                <i class="bi bi-record-circle text-danger me-1"></i>Red semi-transparent circles indicate recurring high-density garbage hotspots.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let adminMap;
+let markerLayer = L.layerGroup();
+let allComplaintsData = [];
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Center map initially around coordinates
+    adminMap = L.map('adminMap').setView([28.6139, 77.2090], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(adminMap);
+
+    markerLayer.addTo(adminMap);
+
+    // Fetch complaints GeoJSON from backend
+    fetch("{{ url_for('api_complaints_map') }}")
+        .then(response => response.json())
+        .then(data => {
+            allComplaintsData = data;
+            renderMarkers(allComplaintsData);
+        })
+        .catch(err => console.error("Error loading complaints data:", err));
+});
+
+function renderMarkers(complaints) {
+    markerLayer.clearLayers();
+
+    if (complaints.length === 0) return;
+
+    const bounds = [];
+
+    complaints.forEach(c => {
+        const lat = parseFloat(c.latitude);
+        const lng = parseFloat(c.longitude);
+
+        if (isNaN(lat) || isNaN(lng)) return;
+
+        bounds.push([lat, lng]);
+
+        // Status color mapping
+        let color = '#ffc107'; // yellow / pending
+        if (c.status === 'Assigned') color = '#fd7e14'; // orange
+        else if (c.status === 'In Progress') color = '#0d6efd'; // blue
+        else if (c.status === 'Resolved') color = '#198754'; // green
+        else if (c.status === 'Rejected') color = '#dc3545'; // red
+
+        // Custom circular map marker
+        const marker = L.circleMarker([lat, lng], {
+            radius: 9,
+            fillColor: color,
+            color: '#ffffff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.9
+        });
+
+        // Popup HTML with photo thumbnail if available
+        let popupHtml = `
+            <div style="min-width: 220px;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <strong style="color: ${color}; font-family: monospace;">${c.complaint_code}</strong>
+                    <span class="badge" style="background-color: ${color}; font-size: 10px;">${c.status}</span>
+                </div>
+                <h6 style="font-size: 13px; font-weight: bold; margin-bottom: 3px;">${c.title}</h6>
+                <p style="font-size: 11px; color: #666; margin-bottom: 6px;">📍 ${c.address}</p>
+        `;
+
+        if (c.before_image) {
+            popupHtml += `
+                <div style="margin-bottom: 6px; text-align: center;">
+                    <img src="/static/uploads/${c.before_image}" style="width: 100%; max-height: 100px; object-fit: cover; border-radius: 4px;">
+                </div>
+            `;
+        }
+
+        popupHtml += `
+                <a href="/track?complaint_code=${c.complaint_code}" class="btn btn-sm btn-outline-dark w-100 py-1" style="font-size: 11px;">
+                    Inspect Complaint
+                </a>
+            </div>
+        `;
+
+        marker.bindPopup(popupHtml);
+        markerLayer.addLayer(marker);
+
+        // If high priority and pending, draw a subtle hotspot radar circle
+        if (c.priority === 'High' && c.status !== 'Resolved') {
+            const hotspotCircle = L.circle([lat, lng], {
+                radius: 180,
+                color: '#dc3545',
+                fillColor: '#dc3545',
+                fillOpacity: 0.15,
+                weight: 1
+            });
+            markerLayer.addLayer(hotspotCircle);
+        }
+    });
+
+    if (bounds.length > 0) {
+        adminMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    }
+}
+
+function filterMap(status) {
+    if (status === 'all') {
+        renderMarkers(allComplaintsData);
+    } else {
+        const filtered = allComplaintsData.filter(c => c.status === status);
+        renderMarkers(filtered);
+    }
+}
+</script>
+{% endblock %}

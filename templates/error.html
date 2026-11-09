@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} - CleanCity{% endblock %}
+{% block content %}
+<div class="container py-5 text-center">
+    <h1 class="display-1 fw-bold text-success">{{ code }}</h1>
+    <p class="lead text-muted">{{ message }}</p>
+    <a href="{{ url_for('home') }}" class="btn btn-success rounded-pill px-4">Back to Home</a>
+</div>
+{% endblock %}

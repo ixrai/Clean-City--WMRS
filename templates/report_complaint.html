@@ -1,0 +1,290 @@
+{% extends "base.html" %} {% block title %}Report Waste Problem - CleanCity{%
+endblock %} {% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <div class="card border-0 shadow-lg rounded-4 overflow-hidden bg-white">
+        <div class="bg-success text-white p-4">
+          <div class="d-flex align-items-center">
+            <div
+              class="icon-box bg-white text-success rounded-circle me-3 shadow-sm"
+            >
+              <i class="bi bi-camera-fill fs-3"></i>
+            </div>
+            <div>
+              <h3 class="fw-bold mb-1">Report Waste / Sanitation Issue</h3>
+              <p class="text-white-50 small mb-0">
+                Submit photographic and GPS evidence for prompt municipal
+                cleaning action.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+          <form
+            action="{{ url_for('report_complaint') }}"
+            method="POST"
+            enctype="multipart/form-data"
+          >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <!-- Issue Category & Title -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label for="category_id" class="form-label"
+                  >Garbage Issue Category
+                  <span class="text-danger">*</span></label
+                >
+                <select
+                  class="form-select"
+                  id="category_id"
+                  name="category_id"
+                  required
+                >
+                  <option value="" disabled selected>
+                    -- Select Issue Type --
+                  </option>
+                  {% for cat in categories %}
+                  <option
+                    value="{{ cat.category_id }}"
+                    data-priority="{{ cat.default_priority }}"
+                  >
+                    {{ cat.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="title" class="form-label"
+                  >Brief Title <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="title"
+                  name="title"
+                  placeholder="e.g. Garbage near bus stop"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+              <label for="description" class="form-label"
+                >Detailed Description <span class="text-danger">*</span></label
+              >
+              <textarea
+                class="form-control"
+                id="description"
+                name="description"
+                rows="3"
+                placeholder="Provide additional details (e.g., smell, blocking pathway, duration of accumulation...)"
+                required
+              ></textarea>
+            </div>
+
+            <!-- Street Address / Landmark -->
+            <div class="mb-3">
+              <label for="address" class="form-label"
+                >Address / Landmark <span class="text-danger">*</span></label
+              >
+              <div class="input-group">
+                <span class="input-group-text bg-light text-muted"
+                  ><i class="bi bi-geo-alt"></i
+                ></span>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="address"
+                  name="address"
+                  placeholder="e.g. Near Community Center, Sector 14"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- GPS Geolocation & Map Picker -->
+            <div class="mb-4">
+              <div
+                class="d-flex justify-content-between align-items-center mb-2"
+              >
+                <label class="form-label mb-0"
+                  >GPS Location Coordinates
+                  <span class="text-danger">*</span></label
+                >
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-success rounded-pill fw-semibold"
+                  id="btnDetectLocation"
+                >
+                  <i class="bi bi-crosshair me-1"></i> Detect My Current GPS
+                </button>
+              </div>
+
+              <!-- Interactive Map Picker -->
+              <div id="pickerMap" class="map-picker mb-2"></div>
+              <small class="text-muted d-block mb-2">
+                <i class="bi bi-info-circle me-1"></i> Click anywhere on the map
+                or drag the marker to pinpoint the exact location.
+              </small>
+
+              <div class="row g-2">
+                <div class="col-6">
+                  <input
+                    type="text"
+                    class="form-control form-control-sm bg-light"
+                    id="latitude"
+                    name="latitude"
+                    placeholder="Latitude"
+                    readonly
+                    required
+                  />
+                </div>
+                <div class="col-6">
+                  <input
+                    type="text"
+                    class="form-control form-control-sm bg-light"
+                    id="longitude"
+                    name="longitude"
+                    placeholder="Longitude"
+                    readonly
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Photo Upload with Preview -->
+            <div class="mb-4">
+              <label for="before_image" class="form-label"
+                >Upload Photograph of Garbage
+                <span class="text-danger">*</span></label
+              >
+              <input
+                type="file"
+                class="form-control"
+                id="before_image"
+                name="before_image"
+                accept="image/*"
+                required
+                onchange="previewImage(this)"
+              />
+              <div class="form-text small">
+                Accepted formats: JPG, PNG, WEBP. Maximum file size: 16 MB.
+              </div>
+
+              <!-- Image Preview Box -->
+              <div id="previewContainer" class="mt-3 d-none">
+                <p class="small text-muted mb-1 fw-bold">Image Preview:</p>
+                <img
+                  id="imagePreview"
+                  src="#"
+                  alt="Preview"
+                  class="photo-preview-box rounded-3 border"
+                  style="max-height: 200px; width: auto"
+                />
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              type="submit"
+              class="btn btn-success btn-lg w-100 fw-bold rounded-pill shadow-sm"
+            >
+              <i class="bi bi-send-fill me-2"></i> Submit Waste Complaint
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_scripts %}
+<script>
+  let marker;
+  let map;
+
+  // Default city center (e.g. New Delhi coordinates 28.6139, 77.2090)
+  const defaultLat = 28.6139;
+  const defaultLng = 77.209;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    map = L.map("pickerMap").setView([defaultLat, defaultLng], 13);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+
+    // Initial marker
+    marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+    updateLatLngInputs(defaultLat, defaultLng);
+
+    // Marker drag event
+    marker.on("dragend", function (e) {
+      const pos = marker.getLatLng();
+      updateLatLngInputs(pos.lat, pos.lng);
+    });
+
+    // Map click event
+    map.on("click", function (e) {
+      marker.setLatLng(e.latlng);
+      updateLatLngInputs(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Detect GPS button
+    document
+      .getElementById("btnDetectLocation")
+      .addEventListener("click", function () {
+        if ("geolocation" in navigator) {
+          this.innerHTML =
+            '<span class="spinner-border spinner-border-sm me-1"></span> Locating...';
+          navigator.geolocation.getCurrentPosition(
+            function (pos) {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              map.setView([lat, lng], 16);
+              marker.setLatLng([lat, lng]);
+              updateLatLngInputs(lat, lng);
+              document.getElementById("btnDetectLocation").innerHTML =
+                '<i class="bi bi-check-circle-fill me-1"></i> GPS Detected';
+            },
+            function (err) {
+              alert(
+                "Could not retrieve GPS location: " +
+                  err.message +
+                  ". Please click on the map to set location manually.",
+              );
+              document.getElementById("btnDetectLocation").innerHTML =
+                '<i class="bi bi-crosshair me-1"></i> Detect My Current GPS';
+            },
+            { enableHighAccuracy: true, timeout: 8000 },
+          );
+        } else {
+          alert(
+            "Geolocation is not supported by your browser. Please select location on the map.",
+          );
+        }
+      });
+  });
+
+  function updateLatLngInputs(lat, lng) {
+    document.getElementById("latitude").value = parseFloat(lat).toFixed(6);
+    document.getElementById("longitude").value = parseFloat(lng).toFixed(6);
+  }
+
+  function previewImage(input) {
+    const previewContainer = document.getElementById("previewContainer");
+    const preview = document.getElementById("imagePreview");
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+        previewContainer.classList.remove("d-none");
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+</script>
+{% endblock %}

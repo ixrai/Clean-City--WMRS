@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Complaints - Admin Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-md-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-exclamation-diamond me-2 text-danger"></i>Municipal Complaint Triage</h2>
+            <p class="text-muted mb-0">Review, prioritize, dispatch field staff, and verify resolution evidence.</p>
+        </div>
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+            <a href="{{ url_for('admin_map') }}" class="btn btn-outline-primary rounded-pill px-3">
+                <i class="bi bi-map me-1"></i> View on Hotspot Map
+            </a>
+            <a href="{{ url_for('admin_export_pdf') }}" class="btn btn-danger rounded-pill px-3">
+                <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF Report
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+        <form method="GET" action="{{ url_for('admin_complaints') }}" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Search by Code or Address" value="{{ search_query }}">
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending Review</option>
+                    <option value="Assigned" {% if status_filter == 'Assigned' %}selected{% endif %}>Assigned</option>
+                    <option value="In Progress" {% if status_filter == 'In Progress' %}selected{% endif %}>In Progress</option>
+                    <option value="Resolved" {% if status_filter == 'Resolved' %}selected{% endif %}>Resolved</option>
+                    <option value="Rejected" {% if status_filter == 'Rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <select name="category_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.category_id }}" {% if category_filter == cat.category_id|string %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-success w-100 fw-bold rounded-3">
+                    <i class="bi bi-filter me-1"></i> Apply Filter
+                </button>
+                <a href="{{ url_for('admin_complaints') }}" class="btn btn-outline-secondary rounded-3" title="Clear Filters">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Complaints Table -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+        <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom">
+            <h5 class="fw-bold mb-0">Registered Grievance Records</h5>
+            <span class="badge bg-light text-dark border">{{ complaints|length }} Records Found</span>
+        </div>
+
+        <div class="card-body p-0">
+            {% if complaints %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4">Ticket</th>
+                            <th>Citizen</th>
+                            <th>Category & Title</th>
+                            <th>Address</th>
+                            <th>Priority</th>
+                            <th>Assigned Staff</th>
+                            <th>Status</th>
+                            <th>Reported</th>
+                            <th class="text-end pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in complaints %}
+                        <tr>
+                            <td class="ps-4 font-monospace fw-bold text-success">
+                                <a href="{{ url_for('track_complaint', complaint_code=c.complaint_code) }}" class="text-decoration-none">
+                                    {{ c.complaint_code }}
+                                </a>
+                            </td>
+                            <td>
+                                <strong class="d-block">{{ c.citizen_name }}</strong>
+                                <small class="text-muted">{{ c.citizen_phone or 'No phone' }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border d-block text-start mb-1">{{ c.category_name }}</span>
+                                <small class="text-secondary text-truncate d-inline-block" style="max-width: 180px;">{{ c.title }}</small>
+                            </td>
+                            <td>
+                                <span class="small text-secondary"><i class="bi bi-geo-alt me-1 text-danger"></i>{{ c.address }}</span>
+                            </td>
+                            <td>
+                                {% if c.priority == 'High' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">High</span>
+                                {% elif c.priority == 'Medium' %}
+                                    <span class="badge bg-warning-subtle text-dark border border-warning-subtle">Medium</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Low</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if c.staff_name %}
+                                    <span class="small fw-semibold text-primary d-block">{{ c.staff_name }}</span>
+                                    <small class="text-muted">{{ c.employee_code }}</small>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger">Unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if c.status == 'Pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif c.status == 'Assigned' %}
+                                    <span class="badge bg-info text-dark">Assigned</span>
+                                {% elif c.status == 'In Progress' %}
+                                    <span class="badge bg-primary">In Progress</span>
+                                {% elif c.status == 'Resolved' %}
+                                    <span class="badge bg-success">Resolved</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ c.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted">
+                                {{ c.created_at.strftime('%d/%m/%y') if c.created_at else '-' }}
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{{ url_for('track_complaint', complaint_code=c.complaint_code) }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                                    <i class="bi bi-sliders me-1"></i> Triage
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox text-muted fs-1 mb-2 d-block"></i>
+                <h6 class="text-secondary fw-bold">No Complaints Found</h6>
+                <p class="text-muted small">No complaints matched the filter criteria.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

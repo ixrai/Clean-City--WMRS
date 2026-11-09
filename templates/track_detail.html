@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Track Ticket {{ complaint.complaint_code }} - CleanCity{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home') }}" class="text-success text-decoration-none">Home</a></li>
+            {% if session.get('role') == 'citizen' %}
+            <li class="breadcrumb-item"><a href="{{ url_for('citizen_dashboard') }}" class="text-success text-decoration-none">My Complaints</a></li>
+            {% elif session.get('role') == 'staff' %}
+            <li class="breadcrumb-item"><a href="{{ url_for('staff_dashboard') }}" class="text-success text-decoration-none">Assigned Tasks</a></li>
+            {% elif session.get('role') == 'admin' %}
+            <li class="breadcrumb-item"><a href="{{ url_for('admin_complaints') }}" class="text-success text-decoration-none">All Complaints</a></li>
+            {% endif %}
+            <li class="breadcrumb-item active" aria-current="page">{{ complaint.complaint_code }}</li>
+        </ol>
+    </nav>
+
+    <!-- Main Card -->
+    <div class="row g-4">
+        <!-- Left Column: Details & Visual Proof -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+                <div class="card-header bg-white py-3 px-4 border-bottom d-flex flex-wrap justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-light text-dark border font-monospace me-2">{{ complaint.complaint_code }}</span>
+                        <h4 class="fw-bold mb-0 d-inline align-middle">{{ complaint.title }}</h4>
+                    </div>
+                    <div class="mt-2 mt-sm-0">
+                        {% if complaint.status == 'Pending' %}
+                            <span class="badge bg-warning text-dark fs-6 px-3 py-1"><i class="bi bi-clock me-1"></i>Pending Review</span>
+                        {% elif complaint.status == 'Assigned' %}
+                            <span class="badge bg-info text-dark fs-6 px-3 py-1"><i class="bi bi-person-check me-1"></i>Staff Assigned</span>
+                        {% elif complaint.status == 'In Progress' %}
+                            <span class="badge bg-primary fs-6 px-3 py-1"><i class="bi bi-gear-fill me-1"></i>In Progress</span>
+                        {% elif complaint.status == 'Resolved' %}
+                            <span class="badge bg-success fs-6 px-3 py-1"><i class="bi bi-check-all me-1"></i>Resolved & Cleaned</span>
+                        {% else %}
+                            <span class="badge bg-danger fs-6 px-3 py-1"><i class="bi bi-x-circle me-1"></i>Rejected</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <!-- Before & After Photo Comparison -->
+                    <h5 class="fw-bold mb-3"><i class="bi bi-images text-success me-2"></i>Photographic Evidence</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-2 bg-light text-center h-100">
+                                <span class="badge bg-danger mb-2"><i class="bi bi-camera me-1"></i>Reported Condition (Before)</span>
+                                {% if complaint.before_image %}
+                                    <img src="{{ url_for('static', filename='uploads/' ~ complaint.before_image) }}" alt="Before Cleaning" class="photo-preview-box">
+                                {% else %}
+                                    <div class="photo-preview-box d-flex align-items-center justify-content-center bg-white text-muted">
+                                        <i class="bi bi-image-alt fs-1"></i>
+                                        <span class="ms-2">No photo uploaded</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-2 bg-light text-center h-100">
+                                <span class="badge bg-success mb-2"><i class="bi bi-check-circle me-1"></i>Sanitation Proof (After)</span>
+                                {% if complaint.after_image %}
+                                    <img src="{{ url_for('static', filename='uploads/' ~ complaint.after_image) }}" alt="After Cleaning" class="photo-preview-box">
+                                {% else %}
+                                    <div class="photo-preview-box d-flex flex-column align-items-center justify-content-center bg-white text-muted">
+                                        <i class="bi bi-hourglass-split fs-1 text-warning mb-1"></i>
+                                        <span class="small">Awaiting completion proof from field staff</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description & Details -->
+                    <h5 class="fw-bold mb-2"><i class="bi bi-card-text text-primary me-2"></i>Complaint Details</h5>
+                    <p class="text-secondary mb-4">{{ complaint.description }}</p>
+
+                    <!-- Metadata Grid -->
+                    <div class="row g-3 p-3 bg-light rounded-3 mb-4">
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Category</small>
+                            <strong class="text-dark">{{ complaint.category_name }}</strong>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Priority</small>
+                            <span class="badge bg-secondary-subtle text-dark border">{{ complaint.priority }}</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Address / Landmark</small>
+                            <strong class="text-dark">{{ complaint.address }}</strong>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Reported On</small>
+                            <strong class="text-dark">{{ complaint.created_at.strftime('%d %b %Y, %I:%M %p') if complaint.created_at else 'N/A' }}</strong>
+                        </div>
+                        {% if complaint.staff_name %}
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Assigned Sanitation Officer</small>
+                            <strong class="text-primary">{{ complaint.staff_name }} ({{ complaint.employee_code }})</strong>
+                        </div>
+                        {% endif %}
+                        {% if complaint.resolved_at %}
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Resolved On</small>
+                            <strong class="text-success">{{ complaint.resolved_at.strftime('%d %b %Y, %I:%M %p') }}</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Embedded Interactive Leaflet Map -->
+                    <h5 class="fw-bold mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Geographic Location</h5>
+                    <div id="detailMap" class="map-picker mb-2"></div>
+                    <small class="text-muted">
+                        Coordinates: Lat <code>{{ complaint.latitude }}</code>, Lng <code>{{ complaint.longitude }}</code>
+                    </small>
+                </div>
+            </div>
+
+            <!-- Citizen Feedback Section -->
+            {% if complaint.status == 'Resolved' %}
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+                <div class="card-header bg-white py-3 px-4 border-bottom">
+                    <h5 class="fw-bold mb-0 text-success"><i class="bi bi-star-fill text-warning me-2"></i>Citizen Resolution Feedback</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if feedback %}
+                        <div class="p-3 bg-light rounded-3">
+                            <div class="mb-2">
+                                <span class="fw-bold me-2">Citizen Rating:</span>
+                                {% for i in range(feedback.rating) %}
+                                    <i class="bi bi-star-fill text-warning fs-5"></i>
+                                {% endfor %}
+                                {% for i in range(5 - feedback.rating) %}
+                                    <i class="bi bi-star text-muted fs-5"></i>
+                                {% endfor %}
+                                <span class="ms-2 fw-semibold">({{ feedback.rating }} / 5)</span>
+                            </div>
+                            <p class="text-secondary mb-0 fst-italic">"{{ feedback.comments or 'No written comments provided.' }}"</p>
+                        </div>
+                    {% elif session.get('user_id') == complaint.citizen_id %}
+                        <!-- Form to submit feedback -->
+                        <form action="{{ url_for('submit_feedback', complaint_id=complaint.complaint_id) }}" method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <p class="text-muted small mb-3">The sanitation team has marked this issue as resolved. Please rate the quality of cleaning.</p>
+                            <div class="mb-3">
+                                <label class="form-label">Cleanliness Rating (1 to 5 Stars):</label>
+                                <select name="rating" class="form-select" required>
+                                    <option value="5">⭐⭐⭐⭐⭐ 5 - Excellent Cleaning</option>
+                                    <option value="4">⭐⭐⭐⭐ 4 - Very Good</option>
+                                    <option value="3">⭐⭐⭐ 3 - Satisfactory</option>
+                                    <option value="2">⭐⭐ 2 - Partially Cleaned</option>
+                                    <option value="1">⭐ 1 - Unsatisfactory</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Comments / Remarks:</label>
+                                <textarea name="comments" rows="3" class="form-control" placeholder="Share your feedback regarding the cleaning service..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success fw-bold rounded-pill px-4">
+                                Submit Feedback
+                            </button>
+                        </form>
+                    {% else %}
+                        <p class="text-muted small mb-0">Feedback has not been submitted by the citizen yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column: Audit Timeline & Role Action Controls -->
+        <div class="col-lg-4">
+            <!-- Staff Action Panel (Visible to assigned staff) -->
+            {% if session.get('role') == 'staff' and complaint.status in ['Assigned', 'In Progress'] %}
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-primary bg-opacity-10 border-primary mb-4">
+                <div class="card-header bg-primary text-white py-3 px-4">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-tools me-2"></i>Staff Action Panel</h6>
+                </div>
+                <div class="card-body p-4">
+                    <p class="small text-secondary mb-3">Update this work order or upload after-cleaning photo proof.</p>
+                    
+                    {% if complaint.status == 'Assigned' %}
+                    <form action="{{ url_for('staff_update_status', complaint_id=complaint.complaint_id) }}" method="POST" class="mb-3">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="status" value="In Progress">
+                        <button type="submit" class="btn btn-primary w-100 fw-bold rounded-3">
+                            <i class="bi bi-play-circle me-1"></i> Start Cleaning (In Progress)
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Form to upload after photo and submit completion -->
+                    <form action="{{ url_for('staff_complete_work', complaint_id=complaint.complaint_id) }}" method="POST" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Upload After-Cleaning Photo <span class="text-danger">*</span></label>
+                            <input type="file" name="after_image" class="form-control form-control-sm" accept="image/*" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Field Notes / Remarks:</label>
+                            <textarea name="remarks" rows="2" class="form-control form-control-sm" placeholder="e.g. Cleared 2 bins, sanitized ground..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 fw-bold rounded-3">
+                            <i class="bi bi-check2-circle me-1"></i> Submit Cleaning Proof
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Admin Action Panel (Visible to Admin) -->
+            {% if session.get('role') == 'admin' %}
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-danger bg-opacity-10 border-danger mb-4">
+                <div class="card-header bg-danger text-white py-3 px-4">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-shield-check me-2"></i>Admin Triage Controls</h6>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ url_for('admin_update_complaint', complaint_id=complaint.complaint_id) }}" method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Assign Sanitation Staff:</label>
+                            <select name="assigned_staff_id" class="form-select form-select-sm">
+                                <option value="">-- Unassigned --</option>
+                                {% for s in all_staff %}
+                                    <option value="{{ s.staff_id }}" {% if complaint.assigned_staff_id == s.staff_id %}selected{% endif %}>
+                                        {{ s.name }} ({{ s.employee_code }} - {{ s.assigned_zone }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Priority Level:</label>
+                            <select name="priority" class="form-select form-select-sm">
+                                <option value="Low" {% if complaint.priority == 'Low' %}selected{% endif %}>Low Priority</option>
+                                <option value="Medium" {% if complaint.priority == 'Medium' %}selected{% endif %}>Medium Priority</option>
+                                <option value="High" {% if complaint.priority == 'High' %}selected{% endif %}>High / Urgent Priority</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Update Status:</label>
+                            <select name="status" class="form-select form-select-sm">
+                                <option value="Pending" {% if complaint.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                <option value="Assigned" {% if complaint.status == 'Assigned' %}selected{% endif %}>Assigned</option>
+                                <option value="In Progress" {% if complaint.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                <option value="Resolved" {% if complaint.status == 'Resolved' %}selected{% endif %}>Resolved (Verified)</option>
+                                <option value="Rejected" {% if complaint.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Admin Remarks / Notes:</label>
+                            <textarea name="remarks" rows="2" class="form-control form-control-sm" placeholder="Enter reason or verification notes..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-danger w-100 fw-bold rounded-3 btn-sm">
+                            <i class="bi bi-save me-1"></i> Apply Admin Updates
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Audit Trail / History -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                <div class="card-header bg-white py-3 px-4 border-bottom">
+                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-clock-history text-secondary me-2"></i>Status Audit Log</h6>
+                </div>
+                <div class="card-body p-4">
+                    {% if history %}
+                    <ul class="list-unstyled position-relative border-start border-2 border-success ms-2 ps-3 mb-0">
+                        {% for h in history %}
+                        <li class="mb-3 position-relative">
+                            <span class="position-absolute top-0 start-0 translate-middle p-1 bg-success border border-white rounded-circle" style="left: -17px; top: 8px;"></span>
+                            <div class="d-flex justify-content-between">
+                                <strong class="small text-dark">{{ h.new_status }}</strong>
+                                <small class="text-muted" style="font-size: 0.75rem;">{{ h.changed_at.strftime('%d %b, %I:%M %p') }}</small>
+                            </div>
+                            <small class="text-muted d-block">By: {{ h.changed_by_name }} ({{ h.changed_by_role }})</small>
+                            {% if h.remarks %}
+                            <small class="text-secondary d-block fst-italic">"{{ h.remarks }}"</small>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted small mb-0">No history logged yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const lat = {{ complaint.latitude }};
+    const lng = {{ complaint.longitude }};
+
+    const map = L.map('detailMap').setView([lat, lng], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    L.marker([lat, lng]).addTo(map)
+        .bindPopup("<strong>{{ complaint.complaint_code }}</strong><br>{{ complaint.category_name }}")
+        .openPopup();
+});
+</script>
+{% endblock %}

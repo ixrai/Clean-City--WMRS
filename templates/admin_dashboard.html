@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Command Center - CleanCity{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Admin Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger text-uppercase px-2 py-1">Administrator</span>
+                <h2 class="fw-bold mb-0">Municipal Sanitation Control Room</h2>
+            </div>
+            <p class="text-muted mb-0">Citywide waste complaint monitoring, resource dispatching & verification engine.</p>
+        </div>
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+            <a href="{{ url_for('admin_map') }}" class="btn btn-primary rounded-pill px-3 fw-semibold">
+                <i class="bi bi-map-fill me-1"></i> Interactive Map
+            </a>
+            <a href="{{ url_for('admin_export_pdf') }}" class="btn btn-outline-danger rounded-pill px-3 fw-semibold">
+                <i class="bi bi-file-earmark-pdf-fill me-1"></i> Export PDF Report
+            </a>
+        </div>
+    </div>
+
+    <!-- 4 KPI Metrics -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card p-3 border-0 shadow-sm bg-white border-start border-4 border-dark h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Total Complaints</span>
+                        <h2 class="fw-bold mb-0 text-dark">{{ metrics.total }}</h2>
+                    </div>
+                    <div class="icon-box bg-light text-dark">
+                        <i class="bi bi-collection"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card p-3 border-0 shadow-sm bg-white border-start border-4 border-warning h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Pending Triage</span>
+                        <h2 class="fw-bold mb-0 text-warning">{{ metrics.pending }}</h2>
+                    </div>
+                    <div class="icon-box bg-warning-subtle text-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card p-3 border-0 shadow-sm bg-white border-start border-4 border-primary h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">In Progress</span>
+                        <h2 class="fw-bold mb-0 text-primary">{{ metrics.active }}</h2>
+                    </div>
+                    <div class="icon-box bg-primary-subtle text-primary">
+                        <i class="bi bi-gear-wide-connected"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card p-3 border-0 shadow-sm bg-white border-start border-4 border-success h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Resolved</span>
+                        <h2 class="fw-bold mb-0 text-success">{{ metrics.resolved }}</h2>
+                    </div>
+                    <div class="icon-box bg-success-subtle text-success">
+                        <i class="bi bi-check2-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Navigation Shortcuts -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card p-3 border-0 shadow-sm card-hover bg-white text-center">
+                <i class="bi bi-geo-alt-fill text-danger fs-2 mb-2"></i>
+                <h6 class="fw-bold mb-1">Geospatial Hotspots</h6>
+                <p class="text-muted small mb-3">View clusters of complaints mapped by priority across city wards.</p>
+                <a href="{{ url_for('admin_map') }}" class="btn btn-sm btn-outline-danger rounded-pill">Open Map</a>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card p-3 border-0 shadow-sm card-hover bg-white text-center">
+                <i class="bi bi-people-fill text-primary fs-2 mb-2"></i>
+                <h6 class="fw-bold mb-1">Staff Workload & Dispatch</h6>
+                <p class="text-muted small mb-3">Review available cleaning staff members and assign pending tickets.</p>
+                <a href="{{ url_for('admin_complaints') }}" class="btn btn-sm btn-outline-primary rounded-pill">Manage Triage</a>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card p-3 border-0 shadow-sm card-hover bg-white text-center">
+                <i class="bi bi-bar-chart-line-fill text-success fs-2 mb-2"></i>
+                <h6 class="fw-bold mb-1">Analytics & PDF Audits</h6>
+                <p class="text-muted small mb-3">Inspect category breakdowns, monthly resolution trends, and generate reports.</p>
+                <a href="{{ url_for('admin_export_pdf') }}" class="btn btn-sm btn-outline-success rounded-pill">Generate PDF</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Complaints Table -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+        <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom">
+            <h5 class="fw-bold mb-0"><i class="bi bi-inbox-fill text-secondary me-2"></i>Recent Incoming Complaints</h5>
+            <a href="{{ url_for('admin_complaints') }}" class="btn btn-sm btn-outline-dark rounded-pill">View All Complaints</a>
+        </div>
+
+        <div class="card-body p-0">
+            {% if recent_complaints %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4">Code</th>
+                            <th>Citizen</th>
+                            <th>Category</th>
+                            <th>Address</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in recent_complaints %}
+                        <tr>
+                            <td class="ps-4 fw-bold font-monospace text-success">{{ c.complaint_code }}</td>
+                            <td>{{ c.citizen_name }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ c.category_name }}</span></td>
+                            <td><span class="small text-secondary">{{ c.address }}</span></td>
+                            <td>
+                                {% if c.status == 'Pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif c.status == 'Assigned' %}
+                                    <span class="badge bg-info text-dark">Assigned</span>
+                                {% elif c.status == 'In Progress' %}
+                                    <span class="badge bg-primary">In Progress</span>
+                                {% elif c.status == 'Resolved' %}
+                                    <span class="badge bg-success">Resolved</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ c.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('track_complaint', complaint_code=c.complaint_code) }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                                    Review
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <p class="text-muted mb-0">No complaints logged yet. Once citizens submit reports, they will show up here.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

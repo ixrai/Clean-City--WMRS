@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - CleanCity{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+                <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-bell-fill text-warning me-2"></i>Notification Center</h5>
+                    <span class="badge bg-light text-dark border">{{ notifications|length }} Notifications</span>
+                </div>
+
+                <div class="card-body p-0">
+                    {% if notifications %}
+                    <ul class="list-group list-group-flush">
+                        {% for n in notifications %}
+                        <li class="list-group-item p-3 p-md-4 {% if not n.is_read %}bg-light border-start border-4 border-success{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <h6 class="fw-bold mb-1 text-dark">{{ n.title }}</h6>
+                                <small class="text-muted">{{ n.created_at.strftime('%d %b %Y, %I:%M %p') if n.created_at else '' }}</small>
+                            </div>
+                            <p class="text-secondary small mb-2">{{ n.message }}</p>
+                            {% if n.complaint_code %}
+                            <a href="{{ url_for('track_complaint', complaint_code=n.complaint_code) }}" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 small">
+                                <i class="bi bi-search me-1"></i> View Ticket {{ n.complaint_code }}
+                            </a>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-bell-slash text-muted fs-1 mb-2 d-block"></i>
+                        <h6 class="text-secondary fw-bold">No Notifications Yet</h6>
+                        <p class="text-muted small">You will receive alerts when your complaints are assigned, cleaned, or resolved.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

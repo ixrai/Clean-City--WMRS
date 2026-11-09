@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Waste Segregation & Environmental Awareness - CleanCity{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="text-center max-w-700 mx-auto mb-5">
+        <span class="badge bg-success text-white px-3 py-2 rounded-pill fw-bold mb-2">
+            <i class="bi bi-tree me-1"></i> Civic Education & Environmental Health
+        </span>
+        <h2 class="display-6 fw-bold">Household & Community Waste Segregation Guide</h2>
+        <p class="text-muted">
+            Segregating waste at source is the single most effective intervention to prevent landfill fires, protect groundwater from toxic leachate, and support municipal sanitation workers.
+        </p>
+    </div>
+
+    <!-- 4 Bins Deep Dive -->
+    <div class="row g-4 mb-5">
+        <!-- Green Bin -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm border-top border-success border-4">
+                <div class="card-body p-4 text-center">
+                    <div class="icon-box bg-success text-white rounded-circle mb-3 mx-auto shadow-sm">
+                        <i class="bi bi-flower1 fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold text-success mb-2">Green Bin</h5>
+                    <span class="badge bg-success-subtle text-success mb-3">Wet / Biodegradable Waste</span>
+                    <p class="small text-muted">Organic material that decomposes naturally into nutrient-rich compost.</p>
+                    
+                    <div class="text-start bg-light p-3 rounded-3 small">
+                        <strong class="d-block text-success mb-1"><i class="bi bi-check-circle me-1"></i> Included:</strong>
+                        <ul class="mb-2 ps-3 text-secondary">
+                            <li>Vegetable & fruit peels</li>
+                            <li>Cooked leftover food</li>
+                            <li>Eggshells, tea bags, coffee grounds</li>
+                            <li>Fallen leaves, garden cuttings</li>
+                        </ul>
+                        <strong class="d-block text-danger mb-1"><i class="bi bi-x-circle me-1"></i> Do NOT include:</strong>
+                        <ul class="mb-0 ps-3 text-secondary">
+                            <li>Plastic carry bags</li>
+                            <li>Milk pouches</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blue Bin -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm border-top border-primary border-4">
+                <div class="card-body p-4 text-center">
+                    <div class="icon-box bg-primary text-white rounded-circle mb-3 mx-auto shadow-sm">
+                        <i class="bi bi-recycle fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold text-primary mb-2">Blue Bin</h5>
+                    <span class="badge bg-primary-subtle text-primary mb-3">Dry / Recyclable Waste</span>
+                    <p class="small text-muted">Inorganic clean items that can be processed and remanufactured.</p>
+                    
+                    <div class="text-start bg-light p-3 rounded-3 small">
+                        <strong class="d-block text-primary mb-1"><i class="bi bi-check-circle me-1"></i> Included:</strong>
+                        <ul class="mb-2 ps-3 text-secondary">
+                            <li>Cardboard boxes & paper</li>
+                            <li>PET plastic bottles, milk pouches</li>
+                            <li>Aluminum cans, tin containers</li>
+                            <li>Glass jars and bottles</li>
+                        </ul>
+                        <strong class="d-block text-danger mb-1"><i class="bi bi-x-circle me-1"></i> Do NOT include:</strong>
+                        <ul class="mb-0 ps-3 text-secondary">
+                            <li>Soiled pizza boxes</li>
+                            <li>Food-contaminated wrappers</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Red Bin -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm border-top border-danger border-4">
+                <div class="card-body p-4 text-center">
+                    <div class="icon-box bg-danger text-white rounded-circle mb-3 mx-auto shadow-sm">
+                        <i class="bi bi-radioactive fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold text-danger mb-2">Red Bin</h5>
+                    <span class="badge bg-danger-subtle text-danger mb-3">Domestic Hazardous Waste</span>
+                    <p class="small text-muted">Items containing toxic, corrosive, or flammable components.</p>
+                    
+                    <div class="text-start bg-light p-3 rounded-3 small">
+                        <strong class="d-block text-danger mb-1"><i class="bi bi-check-circle me-1"></i> Included:</strong>
+                        <ul class="mb-2 ps-3 text-secondary">
+                            <li>Expired pharmaceutical drugs</li>
+                            <li>Syringes, bandages, clinical gloves</li>
+                            <li>Insecticide sprays & paint tins</li>
+                            <li>Bleach, drain cleaners</li>
+                        </ul>
+                        <strong class="d-block text-danger mb-1"><i class="bi bi-exclamation-triangle me-1"></i> Precaution:</strong>
+                        <ul class="mb-0 ps-3 text-secondary">
+                            <li>Wrap sharps in newspaper before disposal</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Black Bin -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm border-top border-dark border-4">
+                <div class="card-body p-4 text-center">
+                    <div class="icon-box bg-dark text-white rounded-circle mb-3 mx-auto shadow-sm">
+                        <i class="bi bi-motherboard fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">Black Bin</h5>
+                    <span class="badge bg-dark-subtle text-dark mb-3">Electronic & Special Waste</span>
+                    <p class="small text-muted">Electrical appliances and components containing precious and toxic heavy metals.</p>
+                    
+                    <div class="text-start bg-light p-3 rounded-3 small">
+                        <strong class="d-block text-dark mb-1"><i class="bi bi-check-circle me-1"></i> Included:</strong>
+                        <ul class="mb-2 ps-3 text-secondary">
+                            <li>Old smartphones, broken remotes</li>
+                            <li>Lithium-ion & dry-cell batteries</li>
+                            <li>USB cables, chargers, adapters</li>
+                            <li>Fluorescent tubes and CFL lamps</li>
+                        </ul>
+                        <strong class="d-block text-dark mb-1"><i class="bi bi-info-circle me-1"></i> Best Practice:</strong>
+                        <ul class="mb-0 ps-3 text-secondary">
+                            <li>Hand over to authorized e-waste recyclers</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- The 5 R's of Waste Hierarchy -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5 bg-white">
+        <h4 class="fw-bold mb-4 text-center text-success"><i class="bi bi-recycle me-2"></i>The 5 R's of Urban Sustainability</h4>
+        <div class="row g-4 text-center">
+            <div class="col-md-2 offset-md-1">
+                <div class="p-3 bg-light rounded-3 h-100">
+                    <span class="badge bg-danger rounded-circle p-2 mb-2">1</span>
+                    <h6 class="fw-bold">Refuse</h6>
+                    <small class="text-muted">Say no to single-use plastics and packaging.</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="p-3 bg-light rounded-3 h-100">
+                    <span class="badge bg-warning text-dark rounded-circle p-2 mb-2">2</span>
+                    <h6 class="fw-bold">Reduce</h6>
+                    <small class="text-muted">Buy only what is needed; eliminate excess waste.</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="p-3 bg-light rounded-3 h-100">
+                    <span class="badge bg-primary rounded-circle p-2 mb-2">3</span>
+                    <h6 class="fw-bold">Reuse</h6>
+                    <small class="text-muted">Repurpose containers, bags, and jars.</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="p-3 bg-light rounded-3 h-100">
+                    <span class="badge bg-info text-dark rounded-circle p-2 mb-2">4</span>
+                    <h6 class="fw-bold">Repurpose</h6>
+                    <small class="text-muted">Convert waste into planters or home utilities.</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="p-3 bg-light rounded-3 h-100">
+                    <span class="badge bg-success rounded-circle p-2 mb-2">5</span>
+                    <h6 class="fw-bold">Recycle</h6>
+                    <small class="text-muted">Route sorted dry waste to authorized recycling facilities.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="text-center p-5 bg-success text-white rounded-4 shadow-sm">
+        <h3 class="fw-bold mb-3">Notice Improper Garbage Dumping in Your Locality?</h3>
+        <p class="lead mb-4 text-white-50">Capture a photo and submit a geolocated report. Our sanitation crews are ready to take action.</p>
+        <a href="{{ url_for('report_complaint') }}" class="btn btn-warning btn-lg fw-bold px-4 py-2 rounded-pill text-dark shadow">
+            <i class="bi bi-camera-fill me-1"></i> File a Complaint Now
+        </a>
+    </div>
+</div>
+{% endblock %}
