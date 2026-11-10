@@ -16,8 +16,8 @@ except ImportError:
 
 _SQLITE_INITIALIZED = False
 
-ADMIN_EMAIL = "admin@wrms.gov"
-STAFF_EMAIL = "staff@wrms.gov"
+ADMIN_EMAIL = "admin@wmrs.gov"
+STAFF_EMAIL = "staff@wmrs.gov"
 
 ADMIN_OLD_EMAIL = "admin@wastemanage.gov"
 STAFF_OLD_EMAIL = "staff@wastemanage.gov"
