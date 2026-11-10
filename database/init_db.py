@@ -22,8 +22,8 @@ from config import DB_TYPE, SQLITE_DB_PATH
 import db as dbmod
 
 
-ADMIN_EMAIL = "admin@wrms.gov"
-STAFF_EMAIL = "staff@wrms.gov"
+ADMIN_EMAIL = "admin@wmrs.gov"
+STAFF_EMAIL = "staff@wmrs.gov"
 
 ADMIN_OLD_EMAIL = "admin@wastemanage.gov"
 STAFF_OLD_EMAIL = "staff@wastemanage.gov"
